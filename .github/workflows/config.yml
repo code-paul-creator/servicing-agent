@@ -1,21 +1,51 @@
-# Ledger — Gemini API configuration
-#
-# Fill in your Gemini API key below (get one free at https://aistudio.google.com/apikey).
-# Keep this file in the SAME FOLDER as servicing-agent-demo.html — the page fetches it
-# by relative path ("./config.yml") when it loads.
-#
-# IMPORTANT: browsers block fetch() for files opened directly (file://). You must serve
-# this folder over a local web server, then open the page through that server, e.g.:
-#
-#   python3 -m http.server 8000
-#   # then open http://localhost:8000/servicing-agent-demo.html
-#
-# or, with Node installed:
-#
-#   npx serve .
-#
-# The key is read once at page load (and again if you click "Reload config.yml" in the
-# app) and is never typed into, displayed in, or logged by the page itself.
+name: Deploy to GitHub Pages
 
-gemini_api_key: "YOUR_GEMINI_API_KEY_HERE"
-gemini_model: "gemini-2.5-flash"
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write config.yml from secret
+        run: |
+          cat > config.yml << EOF
+          gemini_api_key: "${{ secrets.GEMINI_API_KEY }}"
+          gemini_model: "gemini-2.5-flash"
+          EOF
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp servicing-agent-demo.html _site/index.html
+          cp config.yml _site/config.yml
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
