@@ -290,39 +290,32 @@ function executeAction(action) {
   }
 }
 
-// ---------- Gemini API calls ----------
-let geminiApiKey = '';
-let geminiModel = 'gemini-2.5-flash';
+// ---------- Backend proxy calls (browser never holds the real Gemini key) ----------
+let backendUrl = '';
+let proxyKey = ''; // rotatable app-level key, NOT the Gemini key -- see README
 
 async function callGemini(system, messages) {
-  if (!geminiApiKey) {
-    throw new Error('missing_api_key');
+  if (!backendUrl) {
+    throw new Error('missing_backend_url');
   }
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`;
-  const response = await fetch(url, {
+  const body = {
+    system,
+    messages: messages.map(m => ({ role: m.role, content: m.content }))
+  };
+  const headers = { "Content-Type": "application/json" };
+  if (proxyKey) headers["X-Proxy-Key"] = proxyKey;
+
+  const response = await fetch(backendUrl.replace(/\/$/, '') + '/api/generate', {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": geminiApiKey
-    },
-    body: JSON.stringify({
-      contents,
-      systemInstruction: { parts: [{ text: system }] },
-      generationConfig: { maxOutputTokens: 500, temperature: 0.4 }
-    })
+    headers,
+    body: JSON.stringify(body)
   });
   const data = await response.json();
   if (!response.ok) {
-    const msg = (data && data.error && data.error.message) || `Gemini API error (${response.status})`;
-    throw new Error(msg);
+    const msg = (data && data.detail) || `Backend error (${response.status})`;
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
   }
-  const candidate = (data.candidates || [])[0];
-  const parts = candidate && candidate.content && candidate.content.parts || [];
-  return parts.map(p => p.text || '').join('');
+  return data.text || '';
 }
 
 const DECISION_SYSTEM = `You are the decision layer of a credit-card servicing conversational agent. You do NOT have authority to approve or execute anything -- you only classify intent, extract entities, and propose an action for a downstream policy engine to review.
@@ -444,8 +437,8 @@ const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 
 async function handleTurn(userText) {
-  if (!geminiApiKey) {
-    addSystemNote('No Gemini API key loaded yet — set gemini_api_key in config.yml, then click "Reload config.yml".');
+  if (!backendUrl) {
+    addSystemNote('No backend URL loaded yet — set backend_url in config.yml, then click "Reload config.yml".');
     return;
   }
   addMessage('member', userText);
@@ -579,7 +572,7 @@ document.getElementById('tamperBtn').addEventListener('click', () => {
   banner.textContent = `Entry ${chain[idx].id} was just modified in storage. Click "Verify chain integrity" to see it caught.`;
 });
 
-// ---------- Gemini connection: loaded from config.yml, never typed into the page ----------
+// ---------- Backend connection: loaded from config.yml, no secret key in this page ----------
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const configHint = document.getElementById('configHint');
@@ -616,24 +609,24 @@ async function loadConfig() {
     return;
   }
 
-  const key = (parsed.gemini_api_key || '').trim();
-  const model = (parsed.gemini_model || 'gemini-2.5-flash').trim();
-  geminiModel = model;
+  const url = (parsed.backend_url || '').trim();
+  const key = (parsed.proxy_key || '').trim();
 
-  if (!key || key === 'YOUR_GEMINI_API_KEY_HERE') {
-    geminiApiKey = '';
+  if (!url || url === 'YOUR_BACKEND_URL_HERE') {
+    backendUrl = '';
     statusDot.className = 'dot off';
-    statusText.textContent = 'no API key set in config.yml';
+    statusText.textContent = 'no backend_url set in config.yml';
     configHint.style.display = 'block';
-    configHint.innerHTML = 'Add your key to <code>gemini_api_key</code> in <code>config.yml</code> (get one at aistudio.google.com/apikey), save the file, then click "Reload config.yml".';
+    configHint.innerHTML = 'Set <code>backend_url</code> in <code>config.yml</code> to your deployed FastAPI service (e.g. Render/Fly/Railway URL), save, then click "Reload config.yml". No Gemini key belongs in this file anymore -- it lives server-side.';
     return;
   }
 
-  geminiApiKey = key;
+  backendUrl = url;
+  proxyKey = key;
   statusDot.className = 'dot';
-  statusText.textContent = 'live · ' + geminiModel;
-  appendAudit('connection_configured', 'agent', { model: geminiModel, source: 'config.yml' }); // key itself is never logged
-  addSystemNote('Loaded Gemini config (' + geminiModel + ') from config.yml. The key never touches this page\'s UI or the audit log.');
+  statusText.textContent = 'live · via backend';
+  appendAudit('connection_configured', 'agent', { backend_url: backendUrl }); // Gemini key never touches the browser at all
+  addSystemNote('Connected to backend at ' + backendUrl + '. The Gemini key lives server-side only -- this page never sees it.');
 }
 
 document.getElementById('reloadConfigBtn').addEventListener('click', loadConfig);
