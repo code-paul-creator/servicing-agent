@@ -1,0 +1,49 @@
+name: Deploy frontend to GitHub Pages
+
+# The frontend no longer holds any secret -- config.yml only points at your
+# deployed backend URL. Deploy the FastAPI backend separately (Render, Fly.io,
+# Railway, etc.) with GEMINI_API_KEY set there as a secret env var, then put
+# that backend's URL into config.yml's backend_url field before pushing.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp servicing-agent-demo.html _site/index.html
+          cp config.yml _site/config.yml
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
