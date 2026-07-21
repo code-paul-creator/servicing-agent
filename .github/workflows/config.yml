@@ -1,51 +1,29 @@
-name: Deploy to GitHub Pages
+# Ledger — frontend configuration
+#
+# The real Gemini API key is NOT set here anymore -- it lives server-side as
+# an environment variable on your deployed FastAPI backend (GEMINI_API_KEY),
+# never in a file the browser fetches.
+#
+# This file only points the static demo at that backend.
+#
+# Keep this file in the SAME FOLDER as servicing-agent-demo.html -- the page
+# fetches it by relative path ("./config.yml") when it loads.
+#
+# IMPORTANT: browsers block fetch() for files opened directly (file://). You
+# must serve this folder over a local web server, then open the page through
+# that server, e.g.:
+#
+#   python3 -m http.server 8000
+#   # then open http://localhost:8000/servicing-agent-demo.html
+#
+# backend_url: the deployed FastAPI service from backend/ (Render, Fly.io,
+# Railway, etc.) -- must expose POST /api/generate. Example:
+#   backend_url: "https://ledger-backend.onrender.com"
+#
+# proxy_key: optional, only needed if you set PROXY_ACCESS_KEY on the backend.
+# This is NOT a secret in the security sense -- it still ships to the browser
+# and is visible in dev tools. It just lets you rotate/rate-limit access to
+# your backend independently of your real Gemini key. Leave blank to disable.
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Write config.yml from secret
-        run: |
-          cat > config.yml << EOF
-          gemini_api_key: "${{ secrets.GEMINI_API_KEY }}"
-          gemini_model: "gemini-2.5-flash"
-          EOF
-
-      - name: Assemble site
-        run: |
-          mkdir -p _site
-          cp servicing-agent-demo.html _site/index.html
-          cp config.yml _site/config.yml
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+backend_url: "YOUR_BACKEND_URL_HERE"
+proxy_key: ""
