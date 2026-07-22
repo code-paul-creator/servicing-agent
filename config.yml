@@ -25,5 +25,5 @@
 # and is visible in dev tools. It just lets you rotate/rate-limit access to
 # your backend independently of your real Gemini key. Leave blank to disable.
 
-backend_url: "backend_url: "https://ledger-backend-xxxx.onrender.com"
+backend_url: "backend_url: "https://servicing-agent.onrender.com"
 proxy_key: ""
