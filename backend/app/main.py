@@ -73,7 +73,7 @@ def verify_audit(session_id: str):
 # proxies. It is a speed bump, not a security boundary -- if you need a real
 # boundary, put this behind real auth (API keys per client, OAuth, etc.).
 # ---------------------------------------------------------------------------
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 _proxy_access_key = os.environ.get("PROXY_ACCESS_KEY", "")
 _gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
