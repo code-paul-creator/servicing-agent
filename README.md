@@ -43,11 +43,19 @@ Every decision along the way — classification, policy check, system call — i
 
 > 🖥️ **[Try the live demo →](https://code-paul-creator.github.io/servicing-agent/)**
 
-![Session start: genesis entry, connection configured, and the member's message hitting the ledger](<img width="750" height="500" alt="Screenshot 2026-07-23 123852" src="https://github.com/user-attachments/assets/63543b55-8f8d-49ba-959d-0a7d7343bc39" />)
-*The ledger from genesis — `SESSION STARTED` chains from hash `00000000`, followed by `CONNECTION CONFIGURED` and the member's raw `MESSAGE`, each entry embedding the previous entry's hash.*
+**Session start: genesis entry, connection configured, and the member's message hitting the ledger**
 
-![Fee reversal resolved: policy decision, tool call, and full chain verification](<img width="750" height="500" alt="Screenshot 2026-07-23 123801" src="https://github.com/user-attachments/assets/af5d3ffb-f94c-4149-82f7-4d4515374081" />)
-*A resolved fee reversal — `POLICY DECISION` ("Within auto-approval policy") followed by the `TOOL CALL` to `core_system:reverse_fee`, then a one-click **Verify chain integrity** confirming all entries are intact.*
+<img width="500" height="300" alt="Ledger console at session start, showing SESSION STARTED chaining from genesis hash 00000000" src="https://github.com/user-attachments/assets/ef72f6cd-84ec-4619-9702-544da721ea56" />
+
+_The ledger from genesis — SESSION STARTED chains from hash 00000000, followed by CONNECTION CONFIGURED and the member's raw MESSAGE, each entry embedding the previous entry's hash._
+
+<br>
+
+**Fee reversal resolved: policy decision, tool call, and full chain verification**
+
+<img width="435" height="427" alt="Resolved fee reversal with policy decision, tool call, and a verified chain" src="https://github.com/user-attachments/assets/63bc4bb0-f677-49a8-aef9-da6cf4778218" />
+
+_A resolved fee reversal — POLICY DECISION ("Within auto-approval policy") followed by the TOOL CALL to core_system:reverse_fee, then a one-click Verify chain integrity confirming all entries are intact._
 
 <!--
   TODO: still worth adding — a screenshot of Simulate tamper catching a broken hash,
